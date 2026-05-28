@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop POS - 15 Items Per Category</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-pink: #E91E63;
+            --dark-pink: #C2185B;
+            --navy-blue: #0A2540;
+            --light-blue: #1E3A5F;
+            --bg-gray: #F4F6F9;
+            --success-green: #2E7D32;
+            --danger-red: #C62828;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .pos-container {
+            width: 100%;
+            max-width: 1500px;
+            height: 90vh;
+            min-height: 750px;
+            background-color: var(--bg-gray);
+            border: 12px solid #BC24B7;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .catalog-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-gray);
+            border-right: 1px solid #ccc;
+            overflow: hidden;
+        }
+
+        .control-side {
+            width: 420px;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            overflow: hidden;
+            border-left: 1px solid #ccc;
+        }
+
+        .header {
+            background-color: #fff;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #eef0f2;
+        }
+
+        .header-left h1 { font-size: 20px; color: #333; font-weight: 600; }
+
+        .categories-container {
+            background-color: #fff;
+            padding: 12px 20px;
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            width: 100%;
+            flex-shrink: 0;
+            border-bottom: 1px solid #eef0f2;
+        }
+        .categories-container::-webkit-scrollbar { height: 4px; }
+        .categories-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+        .category-tab {
+            border: 1px solid #ccc;
+            background: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #555;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .category-tab.active {
+            background-color: var(--navy-blue);
+            color: white;
+            border-color: var(--navy-blue);
+        }
+
+        .products-grid {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            grid-auto-rows: 180px; 
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.15s ease;
+        }
+        .product-card:hover { transform: translateY(-3px); }
+
+        .top-title-tag {
+            background-color: var(--light-blue);
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 10px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .product-image-container {
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            background: #fff;
+        }
+        
+        .bg-icon-box { background: #E0F2FE; width: 40px; height: 40px; border-radius: 6px; display:flex; justify-content:center; align-items:center; }
+
+        .product-info {
+            background-color: var(--navy-blue);
+            color: white;
+            padding: 8px 12px;
+            display: flex;
+            flex-grow: 1;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-left { 
+            width: 70%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+            align-items: flex-start;
+            gap: 1px; 
+        }
+        .price { font-size: 14px; font-weight: 700; color: #FFD54F; line-height: 1.2; }
+        .stock-label { font-size: 10px; color: #A5D6A7; font-weight: 500; line-height: 1.2; }
+
+        .info-right { width: 30%; text-align: right; display: flex; flex-direction: column; justify-content: center; border-left: 1px solid rgba(255,255,255,0.1); }
+        .qty-val { font-size: 13px; font-weight: bold; color: #fff; }
+        .qty-label { font-size: 7px; color: #8CA0BA; }
+
+        .product-card.oos { opacity: 0.4; }
+
+        .sidebar-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 15px;
+        }
+
+        .search-container { 
+            background: var(--bg-gray); 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            padding: 10px 14px; 
+            gap: 10px;
+            border: 1px solid #dcdfe4;
+            margin-bottom: 12px;
+        }
+        .search-container input { background: transparent; border: none; outline: none; width: 100%; font-size: 13px; }
+
+        .live-receipt-container {
+            flex: 1;
+            background: #FFFDE7;
+            border: 1px solid #E0DDB6;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .receipt-header {
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .receipt-items-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 4px;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #333;
+        }
+        .receipt-item .item-name { width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .receipt-item .item-qty { width: 15%; text-align: center; font-weight: 600; color: var(--primary-pink); }
+        .receipt-item .item-price { width: 30%; text-align: right; font-weight: 600; }
+
+        .receipt-calculation-area {
+            border-top: 2px dashed #ccc;
+            padding-top: 8px;
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .calc-row span { font-size: 12px; font-weight: bold; color: var(--navy-blue); }
+        
+        .total-amount { font-size: 16px; font-weight: 700; color: var(--navy-blue); }
+        
+        .cash-input-box {
+            width: 110px;
+            padding: 6px 8px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+            text-align: right;
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+        .cash-input-box::-webkit-outer-spin-button,
+        .cash-input-box::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .cash-input-box:focus { border-color: var(--primary-pink); background: #fff; }
+
+        .change-amount { font-size: 18px; font-weight: 700; color: var(--success-green); text-align: right; }
+        .change-amount.insufficient { color: var(--danger-red); }
+
+        .action-panel-box {
+            background: linear-gradient(180deg, var(--primary-pink) 0%, var(--dark-pink) 100%);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .grid-btn { background: transparent; border: none; color: white; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+        .grid-btn .icon-box { background: rgba(255, 255, 255, 0.2); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .grid-btn span { font-size: 8px; font-weight: 600; text-transform: uppercase; }
+
+        .nav-system { height: 30px; display: flex; justify-content: space-around; align-items: center; margin-top: 10px; }
+        .nav-system i { color: #888; font-size: 12px; cursor: pointer; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 350px; text-align: center; }
+        .modal-content input { width: 100%; padding: 8px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; }
+        .modal-btn { background: var(--primary-pink); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="pos-container">
+        
+        <!-- Left Workspace: Products Grid -->
+        <div class="catalog-side">
+            <div class="header">
+                <div class="header-left">
+                    <h1>Sari-Sari Store ni Jenikong</h1>
+                </div>
+                <div style="font-size: 12px; color: #666; font-weight: 500;">
+                    柜台 Term-01
+                </div>
+            </div>
+
+            <div class="categories-container">
+                <button class="category-tab active" onclick="filterCategory('all', this)">All Items</button>
+                <button class="category-tab" onclick="filterCategory('snacks', this)">Snacks</button>
+                <button class="category-tab" onclick="filterCategory('noodles', this)">Noodles</button>
+                <button class="category-tab" onclick="filterCategory('drinks', this)">Drinks</button>
+                <button class="category-tab" onclick="filterCategory('canned', this)">Canned Goods</button>
+                <button class="category-tab" onclick="filterCategory('personal', this)">Personal Care</button>
+                <button class="category-tab" onclick="filterCategory('laundry', this)">Laundry Products</button>
+            </div>
+
+            <div class="products-grid" id="productsGrid">
+                
+                <!-- 15 PRODUCTS UNDER CHICHIRYA / SNACKS -->
+                <div class="product-card" data-category="snacks" onclick="addToCart('Piattos Cheese Large', 38.00, this)">
+                    <div class="top-title-tag">Piattos Cheese Lrg</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🟦</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 38.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Nova Country BBQ', 18.00, this)">
+                    <div class="top-title-tag">Nova Country BBQ</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🟥</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 18.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Clover Chips BBQ', 15.00, this)">
+                    <div class="top-title-tag">Clover Chips BBQ</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🟨</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Chippy BBQ Large', 16.00, this)">
+                    <div class="top-title-tag">Chippy BBQ Large</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🔴</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 16.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Tortillos Cheese', 17.00, this)">
+                    <div class="top-title-tag">Tortillos Cheese</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🔶</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 17.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Roller Coaster', 16.50, this)">
+                    <div class="top-title-tag">Roller Coaster</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🌀</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 16.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Vcut Potato Chips', 35.00, this)">
+                    <div class="top-title-tag">Vcut Potato Chips</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🥔</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 35.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Cheese Ring', 15.00, this)">
+                    <div class="top-title-tag">Cheese Ring</div>
+                    <div class="product-image-container"><div class="bg-icon-box">⭕</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Mr. Chips Cheese', 16.00, this)">
+                    <div class="top-title-tag">Mr. Chips Cheese</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🔺</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 16.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Ding Dong Mixed', 12.00, this)">
+                    <div class="top-title-tag">Ding Dong Mixed</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🥜</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 12.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Mang Juan Skin', 18.00, this)">
+                    <div class="top-title-tag">Mang Juan Skin</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🍗</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 18.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Pik-Nik Shoestring', 45.00, this)">
+                    <div class="top-title-tag">Pik-Nik Shoestring</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🍟</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 45.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Cracklings Salt-Vin', 15.00, this)">
+                    <div class="top-title-tag">Cracklings Vinegar</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🟢</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Oishi Prawn Crak', 16.00, this)">
+                    <div class="top-title-tag">Oishi Prawn Crak</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🍤</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 16.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="snacks" onclick="addToCart('Fritos Corn Chips', 15.50, this)">
+                    <div class="top-title-tag">Fritos Corn Chips</div>
+                    <div class="product-image-container"><div class="bg-icon-box">🌽</div></div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+
+                <!-- 15 PRODUCTS UNDER NOODLES -->
+                <div class="product-card" data-category="noodles" onclick="addToCart('Payless Pancit Canton', 15.00, this)">
+                    <div class="top-title-tag">Payless Pancit Canton</div>
+                    <div class="product-image-container">🍜</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Lucky Me Canton Sweet-Spicy', 16.00, this)">
+                    <div class="top-title-tag">LM Canton Swt-Spicy</div>
+                    <div class="product-image-container">🌶️</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 16.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Lucky Me Canton Chilimansi', 16.00, this)">
+                    <div class="top-title-tag">LM Canton Chilimansi</div>
+                    <div class="product-image-container">🟢</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 16.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Lucky Me Canton Kalamansi', 16.00, this)">
+                    <div class="top-title-tag">LM Canton Kalamansi</div>
+                    <div class="product-image-container">🍋</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 16.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Lucky Me Canton Extra Hot', 16.50, this)">
+                    <div class="top-title-tag">LM Canton Extra Hot</div>
+                    <div class="product-image-container">🔥</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 16.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Lucky Me Instant Beef', 15.00, this)">
+                    <div class="top-title-tag">Lucky Me Beef Instant</div>
+                    <div class="product-image-container">🥩</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Lucky Me Instant Chicken', 15.00, this)">
+                    <div class="top-title-tag">Lucky Me Chkn Instant</div>
+                    <div class="product-image-container">🐔</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Nissin Cup Seafood', 25.00, this)">
+                    <div class="top-title-tag">Nissin Cup Seafood</div>
+                    <div class="product-image-container">🥛</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 25.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Nissin Cup Mini Beef', 18.00, this)">
+                    <div class="top-title-tag">Nissin Cup Mini Beef</div>
+                    <div class="product-image-container">☕</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 18.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Lucky Me Batchoy Bowl', 35.00, this)">
+                    <div class="top-title-tag">LM Batchoy Bowl</div>
+                    <div class="product-image-container">🥣</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 35.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Lucky Me Bulalo Bowl', 35.00, this)">
+                    <div class="top-title-tag">LM Bulalo Bowl</div>
+                    <div class="product-image-container">🍲</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 35.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Indomie Mi Goreng', 18.00, this)">
+                    <div class="top-title-tag">Indomie Mi Goreng</div>
+                    <div class="product-image-container">🍳</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 18.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Ho-Mi Instant Mami Beef', 12.00, this)">
+                    <div class="top-title-tag">Ho-Mi Mami Beef</div>
+                    <div class="product-image-container">🥢</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 12.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Payless Yakisoba Spicy', 17.00, this)">
+                    <div class="top-title-tag">Yakisoba Spicy Beef</div>
+                    <div class="product-image-container">🥡</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 17.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="noodles" onclick="addToCart('Samyang Fire Noodles', 65.00, this)">
+                    <div class="top-title-tag">Samyang Fire Noodles</div>
+                    <div class="product-image-container">☢️</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 65.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+
+                <!-- 15 PRODUCTS UNDER DRINKS -->
+                <div class="product-card" data-category="drinks" onclick="addToCart('Coca-Cola Mismo', 20.00, this)">
+                    <div class="top-title-tag">Coca-Cola Mismo</div>
+                    <div class="product-image-container">🥤</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 20.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Sprite Mismo', 20.00, this)">
+                    <div class="top-title-tag">Sprite Mismo</div>
+                    <div class="product-image-container">🟢</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 20.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Royal Mismo', 20.00, this)">
+                    <div class="top-title-tag">Royal Mismo</div>
+                    <div class="product-image-container">🍊</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 20.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Pepsi Pet 290ml', 18.00, this)">
+                    <div class="top-title-tag">Pepsi Pet 290ml</div>
+                    <div class="product-image-container">🔵</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 18.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Mountain Dew Pet', 18.00, this)">
+                    <div class="top-title-tag">Mountain Dew Pet</div>
+                    <div class="product-image-container">🟢</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 18.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('RC Cola Solo', 15.00, this)">
+                    <div class="top-title-tag">RC Cola Solo</div>
+                    <div class="product-image-container">🥤</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('San Miguel Pale Pilsen', 45.00, this)">
+                    <div class="top-title-tag">SMB Pale Pilsen</div>
+                    <div class="product-image-container">🍺</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 45.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Red Horse Beer Stallion', 50.00, this)">
+                    <div class="top-title-tag">Red Horse Stallion</div>
+                    <div class="product-image-container">🍾</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 50.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Gatorade Blue 500ml', 38.00, this)">
+                    <div class="top-title-tag">Gatorade Blue Lrg</div>
+                    <div class="product-image-container">⚡</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 38.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('C2 Green Tea 500ml', 22.00, this)">
+                    <div class="top-title-tag">C2 Green Tea 500ml</div>
+                    <div class="product-image-container">🍵</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 22.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Nestle Chuckie 250ml', 28.00, this)">
+                    <div class="top-title-tag">Nestle Chuckie</div>
+                    <div class="product-image-container">🍫</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 28.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Milo Active-Go 220ml', 26.00, this)">
+                    <div class="top-title-tag">Milo Drink Pack</div>
+                    <div class="product-image-container">🟢</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 26.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Nescafe Iced Coffee Can', 30.00, this)">
+                    <div class="top-title-tag">Nescafe Coffee Can</div>
+                    <div class="product-image-container">☕</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 30.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Wilkins Pure Water 500ml', 15.00, this)">
+                    <div class="top-title-tag">Wilkins Water 500ml</div>
+                    <div class="product-image-container">💧</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="drinks" onclick="addToCart('Viva Mineral Water 1L', 25.00, this)">
+                    <div class="top-title-tag">Viva Water 1 Liter</div>
+                    <div class="product-image-container">🥛</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 25.00</div><div class="stock-label">Stk: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+
+                <!-- 15 PRODUCTS UNDER CANNED GOODS -->
+                <div class="product-card" data-category="canned" onclick="addToCart('Argentina Corned Beef', 42.00, this)">
+                    <div class="top-title-tag">Argentina Corned Beef</div>
+                    <div class="product-image-container">🥫</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 42.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('555 Sardines Tomato', 20.00, this)">
+                    <div class="top-title-tag">555 Sardines Tomato</div>
+                    <div class="product-image-container">🐟</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 20.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('555 Sardines Hot-Spicy', 21.00, this)">
+                    <div class="top-title-tag">555 Sardines Spicy</div>
+                    <div class="product-image-container">🌶️</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 21.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('Ligo Sardines Green', 22.00, this)">
+                    <div class="top-title-tag">Ligo Sardines Green</div>
+                    <div class="product-image-container">🥬</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 22.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('Century Tuna Flakes-Oil', 45.00, this)">
+                    <div class="top-title-tag">Century Tuna Oil</div>
+                    <div class="product-image-container">🐳</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 45.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('Century Tuna Hot-Spicy', 46.00, this)">
+                    <div class="top-title-tag">Century Tuna Spicy</div>
+                    <div class="product-image-container">🔥</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 46.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('555 Tuna Afritada', 28.00, this)">
+                    <div class="top-title-tag">555 Tuna Afritada</div>
+                    <div class="product-image-container">🥘</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 28.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('555 Meat Loaf 150g', 24.00, this)">
+                    <div class="top-title-tag">555 Meat Loaf 150g</div>
+                    <div class="product-image-container">🥩</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 24.00</div><div class="stock-label">Stk: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('Argentina Meat Loaf', 26.00, this)">
+                    <div class="top-title-tag">Argentina Meat Loaf</div>
+                    <div class="product-image-container">🥓</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 26.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('Spam Luncheon Meat', 140.00, this)">
+                    <div class="top-title-tag">Spam Luncheon Meat</div>
+                    <div class="product-image-container">🧱</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 140.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('Ma-Ling Luncheon Meat', 85.00, this)">
+                    <div class="top-title-tag">Ma-Ling 397g Canned</div>
+                    <div class="product-image-container">🍱</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 85.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('CDO Karne Norte 150g', 28.00, this)">
+                    <div class="top-title-tag">CDO Karne Norte</div>
+                    <div class="product-image-container">🧅</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 28.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('Purefoods Corned Beef', 95.00, this)">
+                    <div class="top-title-tag">Purefoods Beef 150g</div>
+                    <div class="product-image-container">👑</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 95.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('Hunts Pork Beans', 32.00, this)">
+                    <div class="top-title-tag">Hunts Pork & Beans</div>
+                    <div class="product-image-container">🫘</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 32.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="canned" onclick="addToCart('San Marino Corned Tuna', 36.00, this)">
+                    <div class="top-title-tag">San Marino Tuna</div>
+                    <div class="product-image-container">🌶️</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 36.00</div><div class="stock-label">Stk: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+
+                <!-- 15 PRODUCTS UNDER PERSONAL CARE -->
+                <div class="product-card" data-category="personal" onclick="addToCart('Sunsilk Shampoo Pink', 8.50, this)">
+                    <div class="top-title-tag">Sunsilk Pink Sachet</div>
+                    <div class="product-image-container">🧴</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 8.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Creamsilk Green Cond', 9.00, this)">
+                    <div class="top-title-tag">Creamsilk Green Sach</div>
+                    <div class="product-image-container">💚</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 9.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Palmolive Shampoo Green', 8.50, this)">
+                    <div class="top-title-tag">Palmolive Green Sach</div>
+                    <div class="product-image-container">🌿</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 8.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Rejoice Shampoo Sach', 8.00, this)">
+                    <div class="top-title-tag">Rejoice Sachet</div>
+                    <div class="product-image-container">✨</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 8.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Dove Beauty Bar Soap', 45.00, this)">
+                    <div class="top-title-tag">Dove White Bar Soap</div>
+                    <div class="product-image-container">🕊️</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 45.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Safeguard White Soap', 25.00, this)">
+                    <div class="top-title-tag">Safeguard White Bar</div>
+                    <div class="product-image-container">🧼</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 25.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Kojie San Soap 65g', 38.00, this)">
+                    <div class="top-title-tag">Kojie San Soap Bar</div>
+                    <div class="product-image-container">🟠</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 38.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Colgate Toothpaste Sach', 8.00, this)">
+                    <div class="top-title-tag">Colgate Twin Pack</div>
+                    <div class="product-image-container">🪥</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 8.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Close-Up Red Sachet', 8.00, this)">
+                    <div class="top-title-tag">Close-Up Red Sach</div>
+                    <div class="product-image-container">🔴</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 8.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Rexona Deodorant Sach', 11.00, this)">
+                    <div class="top-title-tag">Rexona Deo Sachet</div>
+                    <div class="product-image-container">⚪</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 11.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Eskinol Lemon 75ml', 35.00, this)">
+                    <div class="top-title-tag">Eskinol Lemon Small</div>
+                    <div class="product-image-container">🍋</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 35.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Johnson Baby Powder', 40.00, this)">
+                    <div class="top-title-tag">Baby Powder Small</div>
+                    <div class="product-image-container">👶</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 40.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Nivea Lip Balm', 95.00, this)">
+                    <div class="top-title-tag">Nivea Lip Balm Stick</div>
+                    <div class="product-image-container">💄</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 95.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Garnier Facewash Sach', 15.00, this)">
+                    <div class="top-title-tag">Garnier Facewash Sach</div>
+                    <div class="product-image-container">💛</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="personal" onclick="addToCart('Biofresh Hand Sanitizer', 25.00, this)">
+                    <div class="top-title-tag">Hand Sanitizer Small</div>
+                    <div class="product-image-container">🧴</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 25.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+
+                <!-- 15 PRODUCTS UNDER LAUNDRY PRODUCTS -->
+                <div class="product-card" data-category="laundry" onclick="addToCart('Surf Powder Active Clean', 6.00, this)">
+                    <div class="top-title-tag">Surf Powder Sachet</div>
+                    <div class="product-image-container">🧺</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 6.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Ariel Detergent Powder', 9.50, this)">
+                    <div class="top-title-tag">Ariel Powder Sach</div>
+                    <div class="product-image-container">🌀</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 9.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Tide Bar Soap Regular', 12.00, this)">
+                    <div class="top-title-tag">Tide Laundry Bar</div>
+                    <div class="product-image-container">🧼</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 12.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Downy Sunrise Fresh', 7.50, this)">
+                    <div class="top-title-tag">Downy Sunrise Sach</div>
+                    <div class="product-image-container">🌸</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 7.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Surf Blossom Fresh Powder', 6.00, this)">
+                    <div class="top-title-tag">Surf Blossom Sach</div>
+                    <div class="product-image-container">🌺</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 6.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Ariel Sunrise Fresh Powder', 9.50, this)">
+                    <div class="top-title-tag">Ariel Sunrise Sach</div>
+                    <div class="product-image-container">☀️</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 9.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Tide Perfect Clean Powder', 10.00, this)">
+                    <div class="top-title-tag">Tide Powder Sachet</div>
+                    <div class="product-image-container">🧼</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 10.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Downy Garden Bloom', 7.50, this)">
+                    <div class="top-title-tag">Downy Garden Bloom</div>
+                    <div class="product-image-container">💐</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 7.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Downy Mystique Premium', 8.50, this)">
+                    <div class="top-title-tag">Downy Mystique Sach</div>
+                    <div class="product-image-container">💜</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 8.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Champion Bar Blue', 11.00, this)">
+                    <div class="top-title-tag">Champion Bar Blue</div>
+                    <div class="product-image-container">🟦</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 11.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Champion Bar White', 11.00, this)">
+                    <div class="top-title-tag">Champion Bar White</div>
+                    <div class="product-image-container">⬜</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 11.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Breeze Liquid Detergent', 12.50, this)">
+                    <div class="top-title-tag">Breeze Liquid Sach</div>
+                    <div class="product-image-container">💧</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 12.50</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Perla White Bar Soap', 15.00, this)">
+                    <div class="top-title-tag">Perla White Soap</div>
+                    <div class="product-image-container">🧼</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 15.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Zonrox Bleach Original', 14.00, this)">
+                    <div class="top-title-tag">Zonrox Bleach Small</div>
+                    <div class="product-image-container">🧴</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 14.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-category="laundry" onclick="addToCart('Zonrox Colors Gentle', 16.00, this)">
+                    <div class="top-title-tag">Zonrox Colors Small</div>
+                    <div class="product-image-container">🎨</div>
+                    <div class="product-info">
+                        <div class="info-left"><div class="price">₱ 16.00</div><div class="stock-label">Stock: <span class="stock-val">15.00</span></div></div>
+                        <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Right Sidebar Area -->
+        <div class="control-side">
+            <div class="sidebar-panel">
+                
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Maghanap ng produkto..." id="searchInput" onkeyup="searchProducts()">
+                    <i class="fas fa-times" style="cursor:pointer; color:#999;" onclick="clearSearch()"></i>
+                </div>
+
+               <div class="live-receipt-container">
+    <div class="receipt-header">
+        <span>CURRENT PURCHASE</span>
+        <span>RES-N01</span>
+    </div>
+    
+    <div class="receipt-items-list" id="receiptItemsList">
+        <div style="text-align: center; color: #999; font-size: 12px; margin-top: 50px;" id="emptyCartText">
+            Cart is empty.<br>Click products on the left.
+        </div>
+    </div>
+
+    <div class="receipt-calculation-area">
+        <div class="calc-row">
+            <span>TOTAL:</span>
+            <span class="total-amount" id="receiptTotalAmount">₱ 0.00</span>
+        </div>
+
+        <div class="calc-row">
+            <span>CASH (₱):</span>
+            <input 
+                type="number" 
+                class="cash-input-box" 
+                id="cashTendered" 
+                value="" 
+                min="" 
+                oninput="calculateLiveChange()"
+            >
+        </div>
+
+        <div class="calc-row" style="border-top: 1px solid #e0dbe6; padding-top: 4px;">
+            <span>CHANGE:</span>
+            <span class="change-amount" id="receiptChangeAmount">₱ 0.00</span>
+        </div>
+    </div>
+</div>
+
+                <div class="action-panel-box">
+                    <div class="action-grid">
+                        <button class="grid-btn" onclick="clearWholeCart()">
+                            <div class="icon-box" style="background:#E53935;"><i class="fas fa-trash-alt"></i></div>
+                            <span>Clear All</span>
+                        </button>
+                        <button class="grid-btn" onclick="checkoutAlert()">
+                            <div class="icon-box" style="background:#43A047s;"><i class="fas fa-cash-register"></i></div>
+                            <span>Payment</span>
+                        </button>
+                        <button class="grid-btn" onclick="addNonInventory()">
+                            <div class="icon-box"><i class="fas fa-box-open"></i></div>
+                            <span>Non-Inv</span>
+                        </button>
+                        <button class="grid-btn" onclick="openAddProductModal()">
+                            <div class="icon-box"><i class="fas fa-plus-circle"></i></div>
+                            <span>Add Prod</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="nav-system">
+                    <i class="fas fa-chevron-left" onclick="alert('Back Trigger')"></i>
+                    <i class="far fa-circle" onclick="location.reload()"></i>
+                    <i class="fas fa-square" onclick="alert('System Dashboard')"></i>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal Form Template Box -->
+    <div class="modal" id="addProductModal">
+        <div class="modal-content">
+            <h3>Magdagdag ng Bagong Paninda</h3>
+            <input type="text" id="newProdName" placeholder="Pangalan ng Item">
+            <input type="number" id="newProdPrice" placeholder="Presyo (₱)">
+            <input type="text" id="newProdCat" placeholder="Category (snacks, noodles, drinks, canned, personal, laundry)">
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+                <button class="modal-btn" onclick="saveNewProduct()">I-Save</button>
+                <button class="modal-btn" style="background:#aaa;" onclick="closeModal()">I-Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = {};
+        let runningGrandTotal = 0;
+
+        function addToCart(productName, price, cardElement) {
+            let stockSpan = cardElement.querySelector('.stock-val');
+            let currentStock = parseFloat(stockSpan.innerText);
+
+            if (currentStock <= 0) {
+                alert(`Ubos na ang stock ng ${productName}!`);
+                cardElement.classList.add('oos');
+                return;
+            }
+
+            currentStock -= 1;
+            stockSpan.innerText = currentStock.toFixed(2);
+
+            if(currentStock === 0) {
+                cardElement.classList.add('oos');
+            }
+
+            if (!cart[productName]) {
+                cart[productName] = { qty: 0, price: price, elementRef: cardElement };
+            }
+            cart[productName].qty += 1;
+
+            let qtyDisplay = cardElement.querySelector('.qty-val');
+            qtyDisplay.innerText = cart[productName].qty.toFixed(2);
+
+            renderLiveReceipt();
+        }
+
+        function renderLiveReceipt() {
+            let listContainer = document.getElementById('receiptItemsList');
+            let totalAmountDisplay = document.getElementById('receiptTotalAmount');
+            
+            listContainer.innerHTML = ''; 
+            runningGrandTotal = 0;
+            let hasItems = false;
+
+            for (let name in cart) {
+                hasItems = true;
+                let itemCost = cart[name].qty * cart[name].price;
+                runningGrandTotal += itemCost;
+
+                let row = document.createElement('div');
+                row.className = 'receipt-item';
+                row.innerHTML = `
+                    <span class="item-name">🛒 ${name}</span>
+                    <span class="item-qty">x${cart[name].qty}</span>
+                    <span class="item-price">₱ ${itemCost.toFixed(2)}</span>
+                `;
+                listContainer.appendChild(row);
+            }
+
+            if (!hasItems) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; color: #999; font-size: 12px; margin-top: 50px;">
+                        Walang laman ang cart.<br>I-click ang mga produkto sa kaliwa.
+                    </div>
+                `;
+            }
+
+            totalAmountDisplay.innerText = `₱ ${runningGrandTotal.toFixed(2)}`;
+            calculateLiveChange();
+        }
+
+        function calculateLiveChange() {
+            let cashInput = document.getElementById('cashTendered').value;
+            let changeDisplay = document.getElementById('receiptChangeAmount');
+            
+            let cashAmount = parseFloat(cashInput) || 0;
+            
+            if (runningGrandTotal === 0) {
+                changeDisplay.innerText = "₱ 0.00";
+                changeDisplay.classList.remove('insufficient');
+                return;
+            }
+
+            let computedChange = cashAmount - runningGrandTotal;
+            changeDisplay.innerText = `₱ ${computedChange.toFixed(2)}`;
+
+            if (computedChange < 0) {
+                changeDisplay.classList.add('insufficient');
+            } else {
+                changeDisplay.classList.remove('insufficient');
+            }
+        }
+
+        function checkoutAlert() {
+            let cashInput = document.getElementById('cashTendered').value;
+            let cashAmount = parseFloat(cashInput) || 0;
+
+            if(runningGrandTotal === 0) {
+                alert("Wala pang binibili na item.");
+                return;
+            }
+
+            if(cashAmount < runningGrandTotal) {
+                alert("Hindi sapat ang ibinayad na pera! Pakisuri uli.");
+                document.getElementById('cashTendered').focus();
+                return;
+            }
+
+            let sukli = cashAmount - runningGrandTotal;
+            alert(`--- TRANSAKSYON TAPOS NA ---\nTotal: ₱${runningGrandTotal.toFixed(2)}\nBayad: ₱${cashAmount.toFixed(2)}\nSukli: ₱${sukli.toFixed(2)}\n\nSalamat sa pagbili!`);
+            location.reload();
+        }
+
+        function clearWholeCart() {
+            if(Object.keys(cart).length === 0) return;
+            if(confirm("Sigurado ka bang itatapon mo ang lahat ng nasa resibo?")) {
+                location.reload();
+            }
+        }
+
+        function filterCategory(category, element) {
+            document.querySelectorAll('.category-tab').forEach(tab => tab.classList.remove('active'));
+            element.classList.add('active');
+
+            document.querySelectorAll('.product-card').forEach(card => {
+                if(category === 'all' || card.getAttribute('data-category') === category) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function searchProducts() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.product-card').forEach(card => {
+                let title = card.querySelector('.top-title-tag').innerText.toLowerCase();
+                card.style.display = title.includes(input) ? 'flex' : 'none';
+            });
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            searchProducts();
+        }
+
+        function openAddProductModal() { document.getElementById('addProductModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('addProductModal').style.display = 'none'; }
+        
+        function saveNewProduct() {
+            let name = document.getElementById('newProdName').value;
+            let price = parseFloat(document.getElementById('newProdPrice').value);
+            let cat = document.getElementById('newProdCat').value.toLowerCase() || 'snacks';
+
+            if(!name || !price) { alert("Pakisulat ang pangalan at presyo."); return; }
+
+            let grid = document.getElementById('productsGrid');
+            let newCard = document.createElement('div');
+            newCard.className = "product-card";
+            newCard.setAttribute('data-category', cat);
+            newCard.onclick = function() { addToCart(name, price, this); };
+            
+            newCard.innerHTML = `
+                <div class="top-title-tag">${name}</div>
+                <div class="product-image-container"><div class="bg-icon-box">📦</div></div>
+                <div class="product-info">
+                    <div class="info-left">
+                        <div class="price">₱ ${price.toFixed(2)}</div>
+                        <div class="stock-label">Stk: <span class="stock-val">15.00</span></div>
+                    </div>
+                    <div class="info-right"><div class="qty-val">0.00</div><div class="qty-label">QTYS</div></div>
+                </div>
+            `;
+            grid.insertBefore(newCard, grid.firstChild);
+            closeModal();
+            alert("Bagong item ay matagumpay na naidagdag!");
+        }
+
+        function addNonInventory() {
+            let item = prompt("Type item name (ex. Ice, Gasoline):");
+            let qty = Number(
+    prompt("How many will be purchased?")
+);
+            let presyo = parseFloat(prompt("Enter item price (₱):"));
+             
+            if(item && presyo) {
+                if (!cart[item]) {
+                    cart[item] = { qty: 0, price: presyo };
+                }
+                cart[item].qty += qty;
+                renderLiveReceipt();
+            }
+        }
+    </script>
+</body>
+</html>
